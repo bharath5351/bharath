@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevOps Challenge - Flask CI/CD</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+    h1 { margin-bottom: 5px; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+    .box { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-top: 15px; }
+    a { text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <h1>🚀 DevOps Challenge - Containerized Flask App</h1>
+  <p>This project demonstrates Flask + Docker + Kubernetes (kind) + GitHub Actions CI/CD + Terraform validation.</p>
+
+  <div class="box">
+    <h3>Endpoints</h3>
+    <ul>
+      <li><code>/</code> → Hello Devops This is a assignment test</li>
+      <li><code>/health</code> → {"status": "OK"}</li>
+      <li><code>/metrics</code> → Prometheus metrics</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <h3>Run Locally</h3>
+    <pre>
+docker build -t devops-challenge ./app
+docker run -p 8080:8080 devops-challenge
+curl http://localhost:8080/health
+    </pre>
+  </div>
+
+  <p>📌 Full source code is available in the GitHub repository.</p>
+
+</body>
+</html>
