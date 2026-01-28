@@ -1,0 +1,90 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r app/requirements.txt
+
+      - name: Run unit tests
+        run: |
+          python -m pytest app/tests
+
+      - name: Run flake8 linter
+        run: |
+          pip install flake8
+          flake8 app --color=always
+
+      - name: Build Docker image
+        run: |
+          docker build -t devops-challenge:latest ./app
+
+      - name: Terraform Init
+        working-directory: ./iac
+        run: terraform init
+
+      - name: Terraform Format Check
+        working-directory: ./iac
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        working-directory: ./iac
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ./iac
+        run: terraform plan -out=planfile -lock=false
+
+      - name: Install kind
+        uses: helm/kind-action@v1.8.0
+
+      - name: Load Docker image into kind
+        run: kind load docker-image devops-challenge:latest
+
+      - name: Deploy Pod to kind
+        run: kubectl apply -f manifests/pod.yaml
+
+      - name: Wait for pod to be ready
+        run: |
+          kubectl wait --for=condition=ready pod/devops-challenge --timeout=60s
+
+      - name: Port-forward & verify /health
+        run: |
+          set -euo pipefail
+          kubectl port-forward pod/devops-challenge 8080:8080 &
+          sleep 5
+
+          for i in {1..10}; do
+            if curl -s http://localhost:8080/health | tee screenshot.png | grep -q "OK"; then
+              echo "Health check passed."
+              exit 0
+            else
+              echo "Retrying health check... ($i)"
+              sleep 3
+            fi
+          done
+
+          echo "Health check failed after 10 attempts."
+          exit 1
+
+      - name: Upload screenshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-${{ github.run_id }}
+          path: screenshot.png
